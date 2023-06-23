@@ -27,6 +27,9 @@ dependencies {
 
     implementation KotlinX.coroutines.core
     implementation AndroidX.appCompat
+    implementation Square.retrofit2.retrofit
+    implementation Square.retrofit2.converter.moshi
+    implementation project(path: ':di')
 }
 
 

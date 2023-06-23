@@ -430,7 +430,11 @@ class BrowserTabViewModel @Inject constructor(
         object ChildTabClosed : Command()
 
         class CopyAliasToClipboard(val alias: String) : Command()
-        class InjectEmailAddress(val address: String) : Command()
+        class InjectEmailAddress(
+            val duckAddress: String,
+            val originalUrl: String,
+            val autoSaveLogin: Boolean,
+        ) : Command()
         class ShowEmailTooltip(val address: String) : Command()
         sealed class DaxCommand : Command() {
             object FinishPartialTrackerAnimation : DaxCommand()
@@ -2694,9 +2698,15 @@ class BrowserTabViewModel @Inject constructor(
         }
     }
 
-    fun consumeAlias() {
+    /**
+     * API called after user selected to autofill a private alias into a form
+
+     * Consumes the alias and injects it into the current page
+     * Will also automatically save a login for this site if saving logins is enabled
+     */
+    fun consumeAlias(originalUrl: String) {
         emailManager.getAlias()?.let {
-            command.postValue(InjectEmailAddress(it))
+            command.postValue(InjectEmailAddress(duckAddress = it, originalUrl = originalUrl, autoSaveLogin = true))
             pixel.enqueueFire(
                 AppPixelName.EMAIL_USE_ALIAS,
                 mapOf(
@@ -2708,9 +2718,9 @@ class BrowserTabViewModel @Inject constructor(
         }
     }
 
-    fun useAddress() {
+    fun useAddress(originalUrl: String) {
         emailManager.getEmailAddress()?.let {
-            command.postValue(InjectEmailAddress(it))
+            command.postValue(InjectEmailAddress(duckAddress = it, originalUrl = originalUrl, autoSaveLogin = false))
             pixel.enqueueFire(
                 AppPixelName.EMAIL_USE_ADDRESS,
                 mapOf(

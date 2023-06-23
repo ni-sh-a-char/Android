@@ -29,6 +29,7 @@ import com.duckduckgo.app.browser.autofill.AutofillCredentialsSelectionResultHan
 import com.duckduckgo.app.browser.autofill.AutofillCredentialsSelectionResultHandlerTest.FakeAuthenticator.FailEverything
 import com.duckduckgo.app.statistics.api.featureusage.FeatureSegmentsManager
 import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.autofill.api.AutofillCapabilityChecker
 import com.duckduckgo.autofill.api.CredentialAutofillPickerDialog
 import com.duckduckgo.autofill.api.CredentialSavePickerDialog
 import com.duckduckgo.autofill.api.CredentialUpdateExistingCredentialsDialog
@@ -70,6 +71,7 @@ class AutofillCredentialsSelectionResultHandlerTest {
     private lateinit var testee: AutofillCredentialsSelectionResultHandler
     private val autoSavedLoginsMonitor: AutomaticSavedLoginsMonitor = mock()
     private val existingCredentialMatchDetector: ExistingCredentialMatchDetector = mock()
+    private val autofillCapabilityChecker: AutofillCapabilityChecker = mock()
 
     @Test
     fun whenSaveBundleMissingUrlThenNoAttemptToSaveMade() = runTest {
@@ -243,6 +245,54 @@ class AutofillCredentialsSelectionResultHandlerTest {
         verify(autofillDialogSuppressor).autofillSaveOrUpdateDialogVisibilityChanged(visible = true)
     }
 
+    @Test
+    fun whenPrivateDuckAddressSelectedButSavingPasswordsDisabledGeneratedThenNoLoginAutomaticallySaved() = runTest {
+        setupAuthenticatorAlwaysAuth()
+        configureSavingPasswordCapabilityDisabled()
+        testee.processPrivateDuckAddressInjectedEvent(duckAddress = "foo@duck.com", tabId = "abc", originalUrl = "example.com")
+        verifySaveNeverCalled()
+    }
+
+    @Test
+    fun whenPrivateDuckAddressSelectedAndSavingPasswordsEnabledGeneratedThenLoginAutomaticallySaved() = runTest {
+        setupAuthenticatorAlwaysAuth()
+        configureSavingPasswordCapabilityEnabled()
+        testee.processPrivateDuckAddressInjectedEvent(duckAddress = "foo@duck.com", tabId = "abc", originalUrl = "example.com")
+        verify(autofillStore).saveCredentials(any(), any())
+    }
+
+    @Test
+    fun whenPrivateDuckAddressSelectedWithSameUsernameAsAlreadyAutosavedLoginThenLoginNeitherSavedNorUpdated() = runTest {
+        setupAuthenticatorAlwaysAuth()
+        configureSavingPasswordCapabilityEnabled()
+        configurePreviouslyAutosavedLogin()
+        testee.processPrivateDuckAddressInjectedEvent(duckAddress = "foo", tabId = "abc", originalUrl = "example.com")
+        verifySaveNeverCalled()
+        verifyUpdateNeverCalled()
+    }
+
+    @Test
+    fun whenPrivateDuckAddressSelectedWithDifferentUsernameToAlreadyAutosavedLoginThenLoginAutomaticallyUpdated() = runTest {
+        setupAuthenticatorAlwaysAuth()
+        configureSavingPasswordCapabilityEnabled()
+        configurePreviouslyAutosavedLogin()
+        testee.processPrivateDuckAddressInjectedEvent(duckAddress = "foo@duck.com", tabId = "abc", originalUrl = "example.com")
+        verify(autofillStore).updateCredentials(any())
+    }
+
+    private suspend fun configurePreviouslyAutosavedLogin() {
+        whenever(autoSavedLoginsMonitor.getAutoSavedLoginId(any())).thenReturn(1)
+        whenever(autofillStore.getCredentialsWithId(any())).thenReturn(someLoginCredentials())
+    }
+
+    private suspend fun configureSavingPasswordCapabilityEnabled() {
+        whenever(autofillCapabilityChecker.canSaveCredentialsFromWebView(any())).thenReturn(true)
+    }
+
+    private suspend fun configureSavingPasswordCapabilityDisabled() {
+        whenever(autofillCapabilityChecker.canSaveCredentialsFromWebView(any())).thenReturn(false)
+    }
+
     private suspend fun verifySaveNeverCalled() {
         verify(credentialsSaver, never()).saveCredentials(any(), any())
     }
@@ -338,6 +388,7 @@ class AutofillCredentialsSelectionResultHandlerTest {
             existingCredentialMatchDetector = existingCredentialMatchDetector,
             dispatchers = coroutineTestRule.testDispatcherProvider,
             featureSegmentsManager = mockFeatureSegmentsManager,
+            autofillCapabilityChecker = autofillCapabilityChecker,
         )
     }
 
