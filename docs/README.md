@@ -1,165 +1,182 @@
 # Android – DuckDuckGo Android App  
-**Repository:** `github.com/duckduckgo/android`  
-**Description:** The official DuckDuckGo Android client – a privacy‑first web browser, search app, and privacy tools all in one.
+**Repository:** `Android`  
+**Description:** The official DuckDuckGo Android client – a privacy‑first web browser and search app built with Kotlin, Jetpack Compose, and modern Android architecture components.
 
 ---
 
 ## Table of Contents
-1. [Prerequisites](#prerequisites)  
-2. [Installation](#installation)  
-   - 2.1 [Clone the Repository](#clone-the-repository)  
-   - 2.2 [Open in Android Studio](#open-in-android-studio)  
-   - 2.3 [Build & Run](#build--run)  
-   - 2.4 [Signing & Release Build](#signing--release-build)  
-3. [Usage](#usage)  
-   - 3.1 [Launching the App](#launching-the-app)  
-   - 3.2 [Main Features Overview](#main-features-overview)  
-   - 3.3 [Deep Links & Intents](#deep-links--intents)  
-4. [API Documentation](#api-documentation)  
-   - 4.1 [Core Packages](#core-packages)  
-   - 4.2 [Public Classes & Interfaces](#public-classes--interfaces)  
-   - 4.3 [Extension Functions & Utilities](#extension-functions--utilities)  
-5. [Examples](#examples)  
-   - 5.1 [Programmatic Search](#programmatic-search)  
-   - 5.2 [Opening a URL in a Custom Tab](#opening-a-url-in-a-custom-tab)  
-   - 5.3 [Using the Tracker Blocking API](#using-the-tracker-blocking-api)  
-   - 5.4 [Running UI Tests](#running-ui-tests)  
-6. [Contributing](#contributing)  
-7. [License](#license)  
+1. [Installation](#installation)  
+2. [Usage](#usage)  
+3. [API Documentation](#api-documentation)  
+4. [Examples](#examples)  
+5. [Contributing & Development](#contributing--development)  
+6. [License](#license)  
 
----
+---  
 
-## Prerequisites
+## Installation  
+
+### Prerequisites
 | Tool | Minimum Version | Why |
 |------|----------------|-----|
-| **Android Studio** | Arctic Fox (2020.3.1) or newer | Full IDE support, Gradle integration |
-| **JDK** | 11 (OpenJDK) | Required by the Android Gradle plugin |
-| **Android SDK** | API 21 (min) – API 34 (target) | Supports the widest range of devices |
-| **Gradle** | 8.0+ (wrapper) | Managed by the repo – no manual install needed |
-| **Git** | 2.30+ | For cloning and contributing |
+| **Android Studio** | **Arctic Fox (2020.3.1)** or newer | Full IDE support for Gradle, Compose preview, and device emulators |
+| **JDK** | **11** (OpenJDK) | Required by the Android Gradle plugin |
+| **Android SDK** | **API 33 (Android 13)** (compileSdk) <br> **API 21 (Android 5.0)** (minSdk) | Guarantees compatibility with the widest range of devices |
+| **Gradle** | **7.5+** (wrapper) | Managed by the repo – no manual install needed |
+| **Git** | Any recent version | To clone the repository |
 
-> **Tip:** The repository ships a `gradle-wrapper.properties` file, so you can use the exact Gradle version the project was built with without any extra setup.
+> **Tip:** The project uses **Kotlin 1.9** and **Jetpack Compose 1.6**. Ensure your Android Studio channel (Stable/Canary) supports these versions.
+
+### 1️⃣ Clone the repository  
+
+```bash
+git clone https://github.com/duckduckgo/Android.git
+cd Android
+```
+
+### 2️⃣ Open the project in Android Studio  
+
+* **File → Open…** → select the root folder (`Android`).  
+* Android Studio will automatically download the Gradle wrapper and required SDK components.
+
+### 3️⃣ Sync & Build  
+
+```bash
+# From the terminal (or Android Studio's Gradle view)
+./gradlew clean assembleDebug
+```
+
+*The `assembleDebug` task compiles the app and produces an APK at `app/build/outputs/apk/debug/app-debug.apk`.*
+
+### 4️⃣ Run on a device or emulator  
+
+* Connect a physical device (USB debugging enabled) **or** start an Android Virtual Device (AVD) with API 33+.  
+* In Android Studio click **Run → Run 'app'** or use the command line:
+
+```bash
+./gradlew installDebug
+```
+
+### 5️⃣ Optional: Release Build  
+
+```bash
+# Generates a signed release APK (you need to provide your keystore)
+./gradlew assembleRelease
+```
+
+> **Note:** The repository contains a `keystore.properties.example` file. Copy it to `keystore.properties` and fill in your signing credentials before building a release.
 
 ---
 
-## Installation
+## Usage  
 
-### 1. Clone the Repository
+### Launching the app  
+
+* After installation, tap the **DuckDuckGo** icon.  
+* The main screen shows a **search bar** at the top and a **browser view** below.
+
+### Core Features  
+
+| Feature | How to Access | Description |
+|---------|---------------|-------------|
+| **Private Search** | Type a query in the search bar → **Enter** | Sends the query to DuckDuckGo’s privacy‑preserving endpoint (`https://duckduckgo.com`). No personal data is stored. |
+| **Tracker Blocking** | Enabled by default | Blocks known tracking scripts and cookies using the built‑in `TrackerBlockingEngine`. |
+| **HTTPS Everywhere** | Automatic | Forces HTTPS for all supported sites. |
+| **App Settings** | Hamburger menu → **Settings** | Toggle options for **Theme**, **Default Search Engine**, **Clear Data**, **App Updates**, etc. |
+| **Bookmarks & History** | Bottom navigation → **Bookmarks** / **History** | Manage saved pages and view browsing history. |
+| **Incognito Mode** | Bottom navigation → **Incognito** | Opens a new tab that never writes to history or cache. |
+| **Voice Search** | Tap the microphone icon in the search bar | Uses Android’s SpeechRecognizer; results are sent anonymously to DuckDuckGo. |
+| **Dark Mode** | Settings → **Theme** → **Dark** | Follows system UI mode or can be forced. |
+
+### Keyboard shortcuts (when running on a physical keyboard)
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl + L` | Focus the address/search bar |
+| `Ctrl + T` | Open a new tab |
+| `Ctrl + W` | Close current tab |
+| `Ctrl + R` | Reload page |
+| `Ctrl + Shift + N` | Open incognito tab |
+
+### Debugging & Logging  
+
+* **Logcat tag:** `DDGApp` – all internal logs are filtered under this tag.  
+* To enable **verbose logging**, add `-PenableVerboseLogging=true` to the Gradle command:
+
 ```bash
-git clone https://github.com/duckduckgo/android.git
-cd android
+./gradlew assembleDebug -PenableVerboseLogging=true
 ```
-
-### 2. Open in Android Studio
-1. Launch Android Studio.  
-2. Choose **File → Open…** and select the root folder (`android`).  
-3. Android Studio will automatically sync the Gradle project and download required dependencies.
-
-### 3. Build & Run
-#### Debug Build (default)
-```bash
-# From the terminal (or Android Studio's Run button)
-./gradlew assembleDebug
-```
-- The generated APK will be located at `app/build/outputs/apk/debug/app-debug.apk`.  
-- Connect a device or start an emulator, then run:
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.duckduckgo.mobile.android/.MainActivity
-```
-
-#### Run Directly from Android Studio
-- Select **Run → Run 'app'** (or press **Shift+F10**).  
-- Choose a device/emulator and Android Studio will handle the build, install, and launch.
-
-### 4. Signing & Release Build
-To generate a signed release APK for distribution (e.g., Play Store, F-Droid):
-
-1. **Create a keystore** (if you don’t already have one):
-   ```bash
-   keytool -genkeypair -v -keystore ddg-release.keystore \
-           -alias ddg_release_key -keyalg RSA -keysize 2048 \
-           -validity 10000
-   ```
-
-2. **Add signing config** to `app/build.gradle.kts` (or use the `signingConfigs` block already present):
-   ```kotlin
-   signingConfigs {
-       create("release") {
-           storeFile = file("../ddg-release.keystore")
-           storePassword = System.getenv("DDG_KEYSTORE_PASSWORD")
-           keyAlias = "ddg_release_key"
-           keyPassword = System.getenv("DDG_KEY_PASSWORD")
-       }
-   }
-   ```
-
-3. **Build the release APK**:
-   ```bash
-   ./gradlew assembleRelease
-   ```
-
-   The signed APK will be at `app/build/outputs/apk/release/app-release.apk`.
-
-> **Security note:** Never commit keystore files or passwords. Use environment variables or CI secret stores.
 
 ---
 
-## Usage
+## API Documentation  
 
-### Launching the App
-- **From the launcher:** Tap the DuckDuckGo icon.  
-- **Via ADB (debugging):**
-  ```bash
-  adb shell am start -n com.duckduckgo.mobile.android/.MainActivity
-  ```
+> The DuckDuckGo Android app is primarily a **client**; most public APIs are internal to the app. However, the repository exposes a **modular SDK** that can be reused by other Android projects (e.g., custom browsers, privacy‑focused widgets). The SDK lives under the `sdk/` module.
 
-### Main Features Overview
-| Feature | Description | Where to Find |
-|---------|-------------|---------------|
-| **Privacy‑First Search** | Encrypted, non‑tracking search powered by DuckDuckGo’s API. | `SearchFragment` |
-| **Built‑in Tracker Blocking** | Blocks known trackers in real‑time. | `TrackerBlocking` module |
-| **Fire Button** | Clears tabs, cookies, cache, and history in one tap. | `FireButtonViewModel` |
-| **Custom Tabs Integration** | Opens external links in a secure Chrome Custom Tab. | `CustomTabActivity` |
-| **App Settings** | Fine‑grained privacy controls (e.g., site permissions, auto‑clear). | `SettingsActivity` |
-| **Bookmarks & Favorites** | Sync‑able via DuckDuckGo account (optional). | `BookmarksRepository` |
-| **Dark Mode & Theming** | Follows system UI mode or user‑selected theme. | `ThemeManager` |
+### High‑level Modules  
 
-### Deep Links & Intents
-The app registers the following intent filters (see `AndroidManifest.xml`):
+| Module | Package | Purpose |
+|--------|---------|---------|
+| `app` | `com.duckduckgo.app` | Main application, UI, navigation, DI setup |
+| `browser` | `com.duckduckgo.browser` | WebView wrapper, tab management, navigation controller |
+| `search` | `com.duckduckgo.search` | Search‑bar UI, query handling, suggestions |
+| `tracker` | `com.duckduckgo.tracker` | Tracker blocking engine, block‑list updates |
+| `network` | `com.duckduckgo.network` | HTTP client (OkHttp), DNS over HTTPS, certificate pinning |
+| `privacy` | `com.duckduckgo.privacy` | Data‑clearing utilities, incognito handling |
+| `sdk` | `com.duckduckgo.sdk` | Public SDK – `DuckDuckGoBrowser` component and helper classes |
+| `di` | `com.duckduckgo.di` | Dagger/Hilt dependency graph |
+| `utils` | `com.duckduckgo.common.utils` | Miscellaneous extensions, logging, coroutine helpers |
 
-| Action | URI Scheme | Example |
-|--------|------------|---------|
-| **Search** | `ddg://search?q=` | `adb shell am start -a android.intent.action.VIEW -d "ddg://search?q=privacy"` |
-| **Open URL** | `ddg://open?url=` | `adb shell am start -a android.intent.action.VIEW -d "ddg://open?url=https%3A%2F%2Fexample.com"` |
-| **Fire Button** | `ddg://fire` | `adb shell am start -a android.intent.action.VIEW -d "ddg://fire"` |
+### Selected Public Classes (SDK)
 
-These can be used by other apps or shortcuts to invoke DuckDuckGo functionality directly.
+| Class | Package | Description |
+|-------|---------|-------------|
+| `DuckDuckGoBrowser` | `com.duckduckgo.sdk` | A composable that embeds the DuckDuckGo web view with built‑in privacy features. |
+| `DuckDuckGoSearchBar` | `com.duckduckgo.sdk` | Jetpack Compose search bar that automatically routes queries to DuckDuckGo. |
+| `TrackerBlockingEngine` | `com.duckduckgo.tracker` | Core engine that evaluates URLs against the block‑list. |
+| `PrivacyCleaner` | `com.duckduckgo.privacy` | Utility to clear cookies, cache, and local storage. |
+| `NetworkClient` | `com.duckduckgo.network` | Configured OkHttp client with DoH, TLS 1.3, and certificate pinning. |
+| `AppUpdateManager` | `com.duckduckgo.app.update` | Handles in‑app update checks via the DuckDuckGo update API. |
+
+### Dagger/Hilt Components  
+
+| Component | Scope | Provides |
+|-----------|-------|----------|
+| `AppComponent` | `@Singleton` | Application‑wide singletons (e.g., `NetworkClient`, `TrackerBlockingEngine`). |
+| `ActivityComponent` | `@ActivityScoped` | Activity‑level objects (e.g., `BrowserViewModel`). |
+| `FragmentComponent` | `@FragmentScoped` | Fragment‑level dependencies (e.g., `SearchViewModel`). |
+
+### API Reference Generation  
+
+The repository ships with **KDoc** and a Gradle task to generate HTML docs:
+
+```bash
+./gradlew dokkaHtml
+```
+
+The output lives in `build/dokka/html`. Open `index.html` in a browser to explore the full API.
 
 ---
 
-## API Documentation
+## Examples  
 
-> The API is primarily internal to the app, but several public‑facing components are documented for developers who wish to embed DuckDuckGo functionality in their own Android projects.
+Below are practical snippets that demonstrate how to embed DuckDuckGo components in your own Android project.
 
-### 1. Core Packages
+### 1️⃣ Embedding the DuckDuckGo Browser in a Compose UI  
 
-| Package | Purpose |
-|---------|---------|
-| `com.duckduckgo.mobile.android` | Top‑level app entry points (activities, fragments). |
-| `com.duckduckgo.mobile.android.browser` | Browser engine, tab management, navigation. |
-| `com.duckduckgo.mobile.android.tracking` | Tracker detection & blocking logic. |
-| `com.duckduckgo.mobile.android.search` | Search UI, query handling, remote API client. |
-| `com.duckduckgo.mobile.android.fire` | Fire button implementation (data clearing). |
-| `com.duckduckgo.mobile.android.di` | Dagger/Hilt dependency injection modules. |
-| `com.duckduckgo.mobile.android.utils` | Miscellaneous helpers (extensions, logging). |
+```kotlin
+// build.gradle (app module)
+dependencies {
+    implementation(project(":sdk")) // or use the published Maven artifact if available
+}
 
-### 2. Public Classes & Interfaces
+// MainActivity.kt
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import com.duckduckgo.sdk.DuckDuckGoBrowser
+import com.duckduckgo.sdk.DuckDuckGoSearchBar
+import com.duckduckgo.sdk.rememberDuckDuckGoBrowserState
 
-| Class / Interface | Package | Summary |
-|-------------------|---------|---------|
-| `DuckDuckGoSearchClient` | `search` | Wrapper around DuckDuckGo’s HTTP search endpoint. Provides `search(query: String, callback: (Result<SearchResult>) -> Unit)`. |
-| `TrackerBlocking` | `tracking` | Singleton that exposes `isTracker(url: String): Boolean` and `block(url: String)`. |
-| `FireButton` | `fire` | `clearAllData(context: Context, onComplete: () -> Unit)` – clears cookies, cache, history, and local storage. |
-| `CustomTabHelper` | `browser` | Utility to launch a URL in a Chrome Custom Tab with optional fallback to in‑app WebView. |
-| `ThemeManager`
+class MainActivity : ComponentActivity() {
+    override
